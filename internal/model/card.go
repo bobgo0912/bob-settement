@@ -1,4 +1,4 @@
-package modle
+package model
 
 import (
 	"github.com/bobgo0912/b0b-common/pkg/config"

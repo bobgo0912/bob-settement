@@ -5,7 +5,7 @@ go 1.19
 replace github.com/bobgo0912/b0b-common v1.0.1 => ../../b0b-common
 
 require (
-	github.com/bobgo0912/b0b-common v1.0.1
+	github.com/bobgo0912/b0b-common v1.0.3-0.20230215082318-4719bc80a2c4
 	github.com/bobgo0912/bob-armory v0.0.0-20230214093437-b47b17a46253
 	github.com/go-redis/redis/v9 v9.0.0-rc.2
 	github.com/nats-io/nats.go v1.23.0

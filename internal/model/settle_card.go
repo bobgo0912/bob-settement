@@ -1,6 +1,9 @@
-package modle
+package model
 
 import "C"
+import (
+	"fmt"
+)
 
 type SettleCard struct {
 	Id         uint64 `db:"id" json:"id"`                  //p(PRI)
@@ -13,6 +16,15 @@ type SettleCard struct {
 	NumbersAry []int
 	Prize      []int
 	Index      []int
+}
+
+func (c *SettleCard) ToPrize() *Prize {
+	return &Prize{
+		OrderId: c.OrderId,
+		CardId:  c.Id,
+		Prize:   fmt.Sprint(c.Prize),
+		Period:  c.Period,
+	}
 }
 
 func (c *SettleCard) GenIndex(i int) bool {

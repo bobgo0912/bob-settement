@@ -8,7 +8,8 @@ import (
 	"github.com/bobgo0912/b0b-common/pkg/nats"
 	"github.com/bobgo0912/b0b-common/pkg/redis"
 	"github.com/bobgo0912/b0b-common/pkg/server"
-	"github.com/bobgo0912/bob-settement/internal/modle"
+	"github.com/bobgo0912/bob-settement/internal/helper"
+	"github.com/bobgo0912/bob-settement/internal/model"
 	on "github.com/bobgo0912/bob-settement/internal/nats"
 	"os"
 	"os/signal"
@@ -21,7 +22,7 @@ func main() {
 	newConfig := config.NewConfig(config.Json)
 	newConfig.Category = "../config"
 	newConfig.InitConfig()
-	modle.InitPatterns()
+	model.InitPatterns()
 	mainServer := server.NewMainServer()
 	etcdClient := etcd.NewClientFromCnf()
 	backServer := server.NewBackServer(config.Cfg.Host)
@@ -34,12 +35,17 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
+	store, err := model.GetPrizeStore()
+	if err != nil {
+		log.Panic(err)
+	}
+	prizeConsumer := helper.NewMysqlConsumer(store)
 	natsClient, err := nats.NewJetClient()
 	if err != nil {
 		log.Panic(err)
 	}
 	handler := on.NewHandler(natsClient)
-	err = handler.Start(ctx, client.Client)
+	err = handler.Start(ctx, client.Client, prizeConsumer.EventQueue)
 	if err != nil {
 		log.Panic(err)
 	}

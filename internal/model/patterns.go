@@ -1,4 +1,4 @@
-package modle
+package model
 
 var (
 	Patterns [][]int

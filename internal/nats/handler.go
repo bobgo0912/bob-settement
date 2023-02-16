@@ -1,15 +1,18 @@
 package nats
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/bobgo0912/b0b-common/pkg/log"
 	"github.com/bobgo0912/bob-armory/pkg/game/model"
+	"github.com/bobgo0912/bob-settement/internal/constant"
 	"github.com/bobgo0912/bob-settement/internal/handler"
-	sm "github.com/bobgo0912/bob-settement/internal/modle"
+	sm "github.com/bobgo0912/bob-settement/internal/model"
 	"github.com/go-redis/redis/v9"
 	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
 	"sync"
+	"time"
 )
 
 type HandleFunc func(msg *nats.Msg) error
@@ -40,8 +43,8 @@ type Handle struct {
 	Handler     *handler.Settle
 }
 
-func NewHandle(rc *redis.Client, jc *nats.Conn) *Handle {
-	return &Handle{RedisClient: rc, JetClient: jc, Handler: &handler.Settle{Cards: make([]*sm.SettleCard, 0)}}
+func NewHandle(rc *redis.Client, jc *nats.Conn, queue chan *sm.Prize) *Handle {
+	return &Handle{RedisClient: rc, JetClient: jc, Handler: &handler.Settle{Cards: make([]*sm.SettleCard, 0), PrizeQueue: queue}}
 }
 
 func (s *Handle) Handle(msg *nats.Msg) {
@@ -119,7 +122,27 @@ func (s *Handle) GameFinish(msg *nats.Msg) error {
 		log.Error("Unmarshal err=", err.Error())
 		return errors.Wrap(err, "Unmarshal fail")
 	}
-	return s.Handler.Finish(&gameEvent)
+
+	err = s.RedisClient.HSetNX(context.TODO(), constant.SettleHandelFinishRedisKey, gameEvent.GameRoundId, time.Now().UnixMilli()).Err()
+	if err != nil {
+		log.Error("HSetNX fail err=", err.Error())
+	}
+	err = s.Handler.Finish(&gameEvent)
+	if err != nil {
+		log.Error("finish fail err=", err.Error())
+		err1 := msg.Nak()
+		if err1 != nil {
+			log.Error("Nak fail err=", err.Error())
+		}
+		return errors.Wrap(err, "finish")
+	} else {
+		msg.Ack()
+	}
+	err = s.RedisClient.HDel(context.TODO(), constant.SettleHandelFinishRedisKey, gameEvent.GameRoundId).Err()
+	if err != nil {
+		log.Error("HDel fail err=", err.Error())
+	}
+	return err
 }
 
 func (s *Handle) GameCancel(msg *nats.Msg) error {

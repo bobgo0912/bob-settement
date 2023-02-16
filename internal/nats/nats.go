@@ -5,6 +5,7 @@ import (
 	"github.com/bobgo0912/b0b-common/pkg/log"
 	"github.com/bobgo0912/b0b-common/pkg/nats"
 	"github.com/bobgo0912/bob-settement/internal/constant"
+	"github.com/bobgo0912/bob-settement/internal/model"
 	"github.com/go-redis/redis/v9"
 	nats2 "github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
@@ -18,8 +19,8 @@ func NewHandler(client *nats.JetClient) *Handler {
 	return &Handler{Client: client}
 }
 
-func (h *Handler) Start(ctx context.Context, client *redis.Client) error {
-	handle := NewHandle(client, h.Client.Client.Conn)
+func (h *Handler) Start(ctx context.Context, client *redis.Client, queue chan *model.Prize) error {
+	handle := NewHandle(client, h.Client.Client.Conn, queue)
 	Register(constant.SettleBeginEvent, handle.GameBegin)
 	Register(constant.SettleGoingEvent, handle.GameGoing)
 	Register(constant.SettleFinishEvent, handle.GameFinish)
